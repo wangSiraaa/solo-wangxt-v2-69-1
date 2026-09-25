@@ -1,0 +1,66 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="card">
+  <h2>提前还款试算</h2>
+
+  <div class="field">
+    <label for="contract">模拟合同</label>
+    <select id="contract" formControlName="contractId">
+      <option [ngValue]="null">— 手工录入参数 —</option>
+      <option *ngFor="let c of contracts" [ngValue]="c.id">
+        {{ c.contractNo }} · {{ c.borrowerName }} · {{ methodLabels[c.method] }} ·
+        余额 {{ c.remainingPrincipal | number: '1.0-0' }} 元 · 剩 {{ c.remainingPeriods }} 期
+      </option>
+    </select>
+    <small class="hint" *ngIf="loadError">{{ loadError }}</small>
+  </div>
+
+  <ng-container *ngIf="selectedContract as c; else manualParams">
+    <div class="contract-info">
+      <div><span>还款方式</span><strong>{{ methodLabels[c.method] }}</strong></div>
+      <div><span>年利率</span><strong>{{ c.annualRate * 100 | number: '1.0-3' }}%</strong></div>
+      <div><span>剩余本金</span><strong>{{ c.remainingPrincipal | number: '1.2-2' }} 元</strong></div>
+      <div><span>剩余期数</span><strong>{{ c.remainingPeriods }} 期</strong></div>
+    </div>
+  </ng-container>
+
+  <ng-template #manualParams>
+    <div class="grid">
+      <div class="field">
+        <label for="method">还款方式</label>
+        <select id="method" formControlName="method">
+          <option value="EQUAL_INSTALLMENT">等额本息</option>
+          <option value="EQUAL_PRINCIPAL">等额本金</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="rate">年利率（%）</label>
+        <input id="rate" type="number" step="0.001" formControlName="annualRatePercent" />
+      </div>
+      <div class="field">
+        <label for="principal">剩余本金（元）</label>
+        <input id="principal" type="number" step="0.01" formControlName="remainingPrincipal" />
+      </div>
+      <div class="field">
+        <label for="periods">剩余期数（月）</label>
+        <input id="periods" type="number" step="1" formControlName="remainingPeriods" />
+      </div>
+    </div>
+  </ng-template>
+
+  <div class="grid">
+    <div class="field">
+      <label for="prepay">提前还款金额（元）</label>
+      <input id="prepay" type="number" step="0.01" formControlName="prepaymentAmount" />
+      <small class="hint" *ngIf="form.controls.prepaymentAmount.touched && form.controls.prepaymentAmount.invalid">
+        请输入大于 0 且小于剩余本金的金额
+      </small>
+    </div>
+    <div class="field">
+      <label for="fee">手续费（元，一次性）</label>
+      <input id="fee" type="number" step="0.01" formControlName="fee" />
+    </div>
+  </div>
+
+  <button type="submit" [disabled]="loading || form.invalid">
+    {{ loading ? '计算中…' : '对比两种方案' }}
+  </button>
+</form>

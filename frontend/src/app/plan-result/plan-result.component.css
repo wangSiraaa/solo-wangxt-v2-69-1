@@ -1,0 +1,165 @@
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.diff-banner {
+  background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 18px 22px;
+}
+
+.diff-banner h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+  color: #1e3a8a;
+}
+
+.diff-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chip {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+}
+
+.chip.highlight {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.chip-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.chip strong {
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.chip small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.explanation {
+  margin: 14px 0 0;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 18px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+}
+
+.plan h3 {
+  margin: 0 0 14px;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.summary-grid div {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-grid span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.summary-grid strong {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.summary-grid .interest {
+  color: #b45309;
+}
+
+.table-wrap {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  padding: 6px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+th:first-child,
+td:first-child {
+  text-align: center;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  z-index: 1;
+}
+
+tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+tbody tr.settled {
+  background: #f0fdf4;
+  font-weight: 600;
+}
+
+tfoot td {
+  position: sticky;
+  bottom: 0;
+  background: #eef2ff;
+  font-weight: 700;
+  border-top: 1px solid #c7d2fe;
+}

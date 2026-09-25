@@ -1,0 +1,66 @@
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 22px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 17px;
+  color: #0f172a;
+}
+
+.empty {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+th:nth-child(-n + 3),
+td:nth-child(-n + 3) {
+  text-align: left;
+}
+
+thead th {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+}
+
+tbody tr {
+  border-top: 1px solid #e2e8f0;
+}
+
+button {
+  padding: 4px 12px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #2563eb;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #eff6ff;
+}

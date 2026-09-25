@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: loan-prepay-workbench
+  datasource:
+    url: jdbc:postgresql://localhost:5432/loandb
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.hibernate.orm.deprecation: ERROR

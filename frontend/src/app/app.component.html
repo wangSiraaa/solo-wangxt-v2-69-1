@@ -1,0 +1,22 @@
+<header class="topbar">
+  <div>
+    <h1>提前还款方案对比工作台</h1>
+    <p>
+      对同一笔提前还款，分别生成「缩短期限」与「降低月供」两种还款计划，逐期展示本金、利息与剩余余额。
+      支持等额本息与等额本金；全部使用模拟合同，不连接真实放贷接口。
+    </p>
+  </div>
+</header>
+
+<main class="container">
+  <app-compare-form [loading]="loading" (submitted)="onSubmit($event)" />
+
+  <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+  <ng-container *ngIf="comparison">
+    <p class="record-note" *ngIf="recordId != null">当前展示：计算记录 #{{ recordId }}</p>
+    <app-plan-result [result]="comparison" [method]="method" />
+  </ng-container>
+
+  <app-history [refreshToken]="historyRefresh" (viewRecord)="onViewRecord($event)" />
+</main>

@@ -1,0 +1,111 @@
+<section class="result" *ngIf="result">
+  <!-- 差异说明 -->
+  <div class="diff-banner">
+    <h2>方案差异（降低月供 − 缩短期限）</h2>
+    <div class="diff-chips">
+      <div class="chip">
+        <span class="chip-label">期数差</span>
+        <strong>{{ result.diff.periodDiff }} 期</strong>
+        <small>缩短 {{ result.shortenTerm.summary.periods }} 期 / 降供 {{ result.reducePayment.summary.periods }} 期</small>
+      </div>
+      <div class="chip" *ngIf="isInstallment">
+        <span class="chip-label">月供差</span>
+        <strong>{{ result.diff.monthlyPaymentDiff! | number: '1.2-2' }} 元</strong>
+        <small>缩短 {{ result.shortenTerm.summary.monthlyPayment! | number: '1.2-2' }} / 降供 {{ result.reducePayment.summary.monthlyPayment! | number: '1.2-2' }}</small>
+      </div>
+      <div class="chip" *ngIf="!isInstallment">
+        <span class="chip-label">首月月供差</span>
+        <strong>{{ result.diff.firstPaymentDiff | number: '1.2-2' }} 元</strong>
+        <small>缩短 {{ result.shortenTerm.summary.firstPayment | number: '1.2-2' }} / 降供 {{ result.reducePayment.summary.firstPayment | number: '1.2-2' }}</small>
+      </div>
+      <div class="chip highlight">
+        <span class="chip-label">总利息差</span>
+        <strong>{{ result.diff.interestDiff | number: '1.2-2' }} 元</strong>
+        <small>缩短期限更省利息</small>
+      </div>
+    </div>
+    <p class="explanation">
+      同一笔提前还款：<b>缩短期限</b>保持月供水平不变、提前 {{ result.diff.periodDiff }} 期结清，
+      总利息更少（少付 {{ result.diff.interestDiff | number: '1.2-2' }} 元）；
+      <b>降低月供</b>保持 {{ result.reducePayment.summary.periods }} 期不变、
+      <ng-container *ngIf="isInstallment">月供降至 {{ result.reducePayment.summary.monthlyPayment! | number: '1.2-2' }} 元</ng-container>
+      <ng-container *ngIf="!isInstallment">首月月供降至 {{ result.reducePayment.summary.firstPayment | number: '1.2-2' }} 元</ng-container>
+      ，还款压力更小但利息更多。不提前还款的基准总利息为 {{ result.baseline.totalInterest | number: '1.2-2' }} 元（{{ result.baseline.periods }} 期）。
+    </p>
+  </div>
+
+  <!-- 两种方案并排 -->
+  <div class="plans">
+    <article class="plan card" *ngFor="let plan of plans; trackBy: trackPlan">
+      <h3>{{ plan.label }}</h3>
+      <div class="summary-grid">
+        <div>
+          <span>期数</span>
+          <strong>{{ plan.summary.periods }} 期</strong>
+        </div>
+        <div *ngIf="isInstallment">
+          <span>月供</span>
+          <strong>{{ plan.summary.monthlyPayment! | number: '1.2-2' }} 元</strong>
+        </div>
+        <ng-container *ngIf="!isInstallment">
+          <div>
+            <span>首月月供</span>
+            <strong>{{ plan.summary.firstPayment | number: '1.2-2' }} 元</strong>
+          </div>
+          <div>
+            <span>末月月供</span>
+            <strong>{{ plan.summary.lastPayment | number: '1.2-2' }} 元</strong>
+          </div>
+        </ng-container>
+        <div>
+          <span>偿还本金</span>
+          <strong>{{ plan.summary.totalPrincipal | number: '1.2-2' }} 元</strong>
+        </div>
+        <div>
+          <span>总利息</span>
+          <strong class="interest">{{ plan.summary.totalInterest | number: '1.2-2' }} 元</strong>
+        </div>
+        <div>
+          <span>手续费</span>
+          <strong>{{ plan.summary.fee | number: '1.2-2' }} 元</strong>
+        </div>
+        <div>
+          <span>总成本（本息+费）</span>
+          <strong>{{ plan.summary.totalCost | number: '1.2-2' }} 元</strong>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>期次</th>
+              <th>月供（元）</th>
+              <th>本金（元）</th>
+              <th>利息（元）</th>
+              <th>剩余本金（元）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of plan.schedule" [class.settled]="row.balance === 0">
+              <td>{{ row.period }}</td>
+              <td>{{ row.payment | number: '1.2-2' }}</td>
+              <td>{{ row.principal | number: '1.2-2' }}</td>
+              <td>{{ row.interest | number: '1.2-2' }}</td>
+              <td>{{ row.balance | number: '1.2-2' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>合计</td>
+              <td>{{ plan.summary.totalPayment | number: '1.2-2' }}</td>
+              <td>{{ plan.summary.totalPrincipal | number: '1.2-2' }}</td>
+              <td>{{ plan.summary.totalInterest | number: '1.2-2' }}</td>
+              <td>—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </article>
+  </div>
+</section>
