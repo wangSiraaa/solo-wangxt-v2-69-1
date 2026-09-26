@@ -7,6 +7,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -14,6 +15,8 @@ import java.util.List;
  */
 @Component
 public class DataSeeder implements CommandLineRunner {
+
+    private static final LocalDate START = LocalDate.of(2025, 1, 1);
 
     private final LoanContractRepository contractRepository;
 
@@ -27,14 +30,20 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
         contractRepository.saveAll(List.of(
-                new LoanContract("MOCK-2024-0001", "张三", RepaymentMethod.EQUAL_INSTALLMENT,
+                contract("MOCK-2024-0001", "张三", RepaymentMethod.EQUAL_INSTALLMENT,
                         new BigDecimal("0.049"), new BigDecimal("1000000.00"), 240),
-                new LoanContract("MOCK-2024-0002", "李四", RepaymentMethod.EQUAL_PRINCIPAL,
+                contract("MOCK-2024-0002", "李四", RepaymentMethod.EQUAL_PRINCIPAL,
                         new BigDecimal("0.049"), new BigDecimal("1000000.00"), 240),
-                new LoanContract("MOCK-2024-0003", "王五", RepaymentMethod.EQUAL_INSTALLMENT,
+                contract("MOCK-2024-0003", "王五", RepaymentMethod.EQUAL_INSTALLMENT,
                         new BigDecimal("0.036"), new BigDecimal("650000.00"), 180),
-                new LoanContract("MOCK-2024-0004", "赵六", RepaymentMethod.EQUAL_PRINCIPAL,
+                contract("MOCK-2024-0004", "赵六", RepaymentMethod.EQUAL_PRINCIPAL,
                         new BigDecimal("0.042"), new BigDecimal("2300000.00"), 300)
         ));
+    }
+
+    private LoanContract contract(String no, String borrower, RepaymentMethod method,
+                                  BigDecimal rate, BigDecimal principal, int periods) {
+        return new LoanContract(no, borrower, method, rate, principal, periods,
+                START, List.of(new LoanContract.StoredRateSegment(START, rate)), 1);
     }
 }

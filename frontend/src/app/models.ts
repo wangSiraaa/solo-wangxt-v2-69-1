@@ -7,6 +7,11 @@ export const METHOD_LABELS: Record<RepaymentMethod, string> = {
   EQUAL_PRINCIPAL: '等额本金',
 };
 
+export interface RateSegment {
+  effectiveDate: string;
+  annualRate: number;
+}
+
 export interface LoanContract {
   id: number;
   contractNo: string;
@@ -15,15 +20,30 @@ export interface LoanContract {
   annualRate: number;
   remainingPrincipal: number;
   remainingPeriods: number;
+  scheduleStartDate: string;
+  rateScheduleVersion: number;
+  rateSegments: RateSegment[];
   createdAt: string;
+}
+
+export interface InterestBreakdown {
+  segmentStart: string;
+  segmentEnd: string;
+  effectiveDate: string;
+  annualRate: number;
+  days: number;
+  interest: number;
 }
 
 export interface ScheduleRow {
   period: number;
+  startDate: string | null;
+  dueDate: string | null;
   payment: number;
   principal: number;
   interest: number;
   balance: number;
+  interestBreakdown: InterestBreakdown[];
 }
 
 export interface PlanSummary {
@@ -43,6 +63,10 @@ export interface PlanResult {
   label: string;
   summary: PlanSummary;
   schedule: ScheduleRow[];
+  scheduleStartDate: string | null;
+  rateScheduleVersion: number | null;
+  rateScheduleSnapshot: RateSegment[] | null;
+  prepaymentDate: string | null;
 }
 
 export interface DiffSummary {
@@ -72,8 +96,18 @@ export interface CompareRequest {
   annualRate?: number | null;
   remainingPrincipal?: number | null;
   remainingPeriods?: number | null;
+  scheduleStartDate?: string | null;
+  rateSegments?: RateSegment[];
+  prepaymentDate?: string | null;
   prepaymentAmount: number;
   fee: number;
+}
+
+export interface DeriveCalculationRequest {
+  prepaymentAmount: number;
+  fee: number;
+  prepaymentDate?: string | null;
+  useCurrentContractSchedule?: boolean;
 }
 
 export interface RecordSummaryView {
@@ -84,6 +118,9 @@ export interface RecordSummaryView {
   annualRate: number;
   remainingPrincipal: number;
   remainingPeriods: number;
+  scheduleStartDate: string | null;
+  rateScheduleVersion: number;
+  prepaymentDate: string | null;
   prepaymentAmount: number;
   fee: number;
   shortenPeriods: number;

@@ -9,7 +9,7 @@
 </header>
 
 <main class="container">
-  <app-compare-form [loading]="loading" (submitted)="onSubmit($event)" />
+  <app-compare-form [loading]="loading" (submitted)="onSubmit($event)" (contractsChanged)="historyRefresh = historyRefresh + 1" />
 
   <div class="error-banner" *ngIf="error">{{ error }}</div>
 
@@ -18,5 +18,7 @@
     <app-plan-result [result]="comparison" [method]="method" />
   </ng-container>
 
-  <app-history [refreshToken]="historyRefresh" (viewRecord)="onViewRecord($event)" />
+  <app-history [refreshToken]="historyRefresh"
+               (viewRecord)="onViewRecord($event)"
+               (deriveRecord)="onDerive($event)" />
 </main>

@@ -1,8 +1,9 @@
 package com.example.loan.web;
 
 import com.example.loan.api.ContractRequest;
-import com.example.loan.domain.LoanContract;
-import com.example.loan.repo.LoanContractRepository;
+import com.example.loan.api.ContractResponse;
+import com.example.loan.api.UpdateContractRequest;
+import com.example.loan.service.ContractService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -16,29 +17,30 @@ import java.util.List;
 @RequestMapping("/api/contracts")
 public class ContractController {
 
-    private final LoanContractRepository contractRepository;
+    private final ContractService contractService;
 
-    public ContractController(LoanContractRepository contractRepository) {
-        this.contractRepository = contractRepository;
+    public ContractController(ContractService contractService) {
+        this.contractService = contractService;
     }
 
     @GetMapping
-    public List<LoanContract> list() {
-        return contractRepository.findAll();
+    public List<ContractResponse> list() {
+        return contractService.list();
     }
 
     @GetMapping("/{id}")
-    public LoanContract get(@PathVariable long id) {
-        return contractRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("模拟合同不存在: id=" + id));
+    public ContractResponse get(@PathVariable long id) {
+        return contractService.get(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public LoanContract create(@Valid @RequestBody ContractRequest req) {
-        LoanContract contract = new LoanContract(
-                req.contractNo(), req.borrowerName(), req.method(),
-                req.annualRate(), req.remainingPrincipal(), req.remainingPeriods());
-        return contractRepository.save(contract);
+    public ContractResponse create(@Valid @RequestBody ContractRequest req) {
+        return contractService.create(req);
+    }
+
+    @PutMapping("/{id}")
+    public ContractResponse update(@PathVariable long id, @Valid @RequestBody UpdateContractRequest req) {
+        return contractService.update(id, req);
     }
 }

@@ -163,3 +163,90 @@ tfoot td {
   font-weight: 700;
   border-top: 1px solid #c7d2fe;
 }
+
+.plan-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.plan-heading h3 {
+  margin: 0;
+}
+
+.version-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.schedule-meta {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.timeline-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.timeline-mini span {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 12px;
+}
+
+td.source {
+  text-align: left;
+  white-space: normal;
+  min-width: 190px;
+  color: #475569;
+}
+
+td:first-child small {
+  display: block;
+  color: #64748b;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.expand {
+  width: 22px;
+  height: 22px;
+  margin: 0 4px 0 0;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+tr.split {
+  background: #fffbeb !important;
+}
+
+.breakdown-row > td {
+  padding: 0;
+  background: #fff;
+}
+
+.breakdown-row table {
+  margin: 0;
+  font-size: 12px;
+}
+
+.breakdown-row th,
+.breakdown-row td {
+  background: #fffbeb;
+}

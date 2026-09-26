@@ -7,7 +7,7 @@
       <option [ngValue]="null">— 手工录入参数 —</option>
       <option *ngFor="let c of contracts" [ngValue]="c.id">
         {{ c.contractNo }} · {{ c.borrowerName }} · {{ methodLabels[c.method] }} ·
-        余额 {{ c.remainingPrincipal | number: '1.0-0' }} 元 · 剩 {{ c.remainingPeriods }} 期
+        余额 {{ c.remainingPrincipal | number: '1.0-0' }} 元 · 剩 {{ c.remainingPeriods }} 期 · v{{ c.rateScheduleVersion }}
       </option>
     </select>
     <small class="hint" *ngIf="loadError">{{ loadError }}</small>
@@ -16,9 +16,9 @@
   <ng-container *ngIf="selectedContract as c; else manualParams">
     <div class="contract-info">
       <div><span>还款方式</span><strong>{{ methodLabels[c.method] }}</strong></div>
-      <div><span>年利率</span><strong>{{ c.annualRate * 100 | number: '1.0-3' }}%</strong></div>
       <div><span>剩余本金</span><strong>{{ c.remainingPrincipal | number: '1.2-2' }} 元</strong></div>
       <div><span>剩余期数</span><strong>{{ c.remainingPeriods }} 期</strong></div>
+      <div><span>当前利率版本</span><strong>v{{ c.rateScheduleVersion }}</strong></div>
     </div>
   </ng-container>
 
@@ -32,8 +32,9 @@
         </select>
       </div>
       <div class="field">
-        <label for="rate">年利率（%）</label>
-        <input id="rate" type="number" step="0.001" formControlName="annualRatePercent" />
+        <label for="rate">初始年利率（%）</label>
+        <input id="rate" type="number" step="0.000001" formControlName="annualRatePercent"
+               (blur)="syncManualInput()" />
       </div>
       <div class="field">
         <label for="principal">剩余本金（元）</label>
@@ -45,6 +46,66 @@
       </div>
     </div>
   </ng-template>
+
+  <section class="timeline-editor">
+    <div class="section-title">
+      <h3>分段利率调整时间表</h3>
+      <p>按实际占用天数 ACT/360 分段计息；同日多次调整会被拒绝，首段必须覆盖模拟起始日。本次提前还款在起始日发生。</p>
+    </div>
+
+    <div class="grid">
+      <div class="field" *ngIf="!useContract">
+        <label for="startDate">模拟开始日期（本期起息日）</label>
+        <input id="startDate" type="date" formControlName="startDate" (blur)="syncManualInput()" />
+      </div>
+      <div class="field">
+        <label for="prepaymentDate">提前还款日（须为账期起始日）</label>
+        <input id="prepaymentDate" type="date"
+               [value]="useContract ? editingStartDate : form.controls.startDate.value"
+               (input)="setPrepaymentDate($event)" />
+      </div>
+    </div>
+    <div class="field static-date" *ngIf="useContract">
+      <label>模拟开始日期</label>
+      <strong>{{ editingStartDate }}</strong>
+    </div>
+
+    <ol class="timeline">
+      <li *ngFor="let s of editingSegments; let last = last" class="timeline-item">
+        <span class="timeline-dot" [class.future]="s.effectiveDate > editingStartDate"></span>
+        <div class="timeline-content">
+          <strong>{{ s.effectiveDate }}</strong>
+          <span>{{ s.annualRate * 100 | number: '1.0-6' }}%</span>
+          <small *ngIf="s.effectiveDate === editingStartDate">初始生效</small>
+          <small *ngIf="s.effectiveDate !== editingStartDate">调息日</small>
+        </div>
+        <button type="button" class="link-button danger"
+                (click)="removeSegment(s.effectiveDate, s.annualRate)"
+                [disabled]="editingSegments.length <= 1">删除</button>
+        <span class="timeline-line" *ngIf="!last"></span>
+      </li>
+    </ol>
+
+    <div [formGroup]="segmentDraft" class="segment-draft grid">
+      <div class="field">
+        <label for="segmentDate">新生效日</label>
+        <input id="segmentDate" type="date" formControlName="date" />
+      </div>
+      <div class="field">
+        <label for="segmentRate">新年利率（%）</label>
+        <input id="segmentRate" type="number" step="0.000001" formControlName="ratePercent" />
+      </div>
+      <button type="button" class="secondary" (click)="addSegment()">加入时间轴</button>
+    </div>
+
+    <small class="hint error" *ngIf="timelineError">{{ timelineError }}</small>
+    <small class="hint success" *ngIf="saveSuccess">{{ saveSuccess }}</small>
+    <small class="hint error" *ngIf="saveError">{{ saveError }}</small>
+
+    <button type="button" class="secondary full" *ngIf="useContract" (click)="saveContractSchedule()" [disabled]="saving">
+      {{ saving ? '保存中…' : '保存合同利率时间表（生成新版本）' }}
+    </button>
+  </section>
 
   <div class="grid">
     <div class="field">
@@ -60,7 +121,9 @@
     </div>
   </div>
 
-  <button type="submit" [disabled]="loading || form.invalid">
+  <p class="event-order">事件顺序：提前还款在账期起始日处理；若恰逢调息日，先冲减本金，再按新利率对冲减后余额起息。</p>
+
+  <button type="submit" [disabled]="loading || form.invalid || !!timelineError">
     {{ loading ? '计算中…' : '对比两种方案' }}
   </button>
 </form>

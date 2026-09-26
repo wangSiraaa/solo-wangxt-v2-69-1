@@ -3,10 +3,12 @@ package com.example.loan.service;
 import com.example.loan.api.ComparisonResult;
 import com.example.loan.api.PlanResult;
 import com.example.loan.api.ScheduleRow;
+import com.example.loan.domain.LoanContract;
 import com.example.loan.domain.RepaymentMethod;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -151,6 +153,73 @@ class AmortizationServiceTest {
         assertEquals(48, result.diff().periodDiff());
     }
 
+    // ---------- 分段利率时间表 ----------
+
+    @Test
+    void scheduledRateChange_splitsInterestAcrossActualDays() {
+        LocalDate start = LocalDate.of(2025, 1, 1);
+        LocalDate change = LocalDate.of(2025, 2, 10);
+        List<LoanContract.StoredRateSegment> segments = List.of(
+                new LoanContract.StoredRateSegment(start, new BigDecimal("0.036000")),
+                new LoanContract.StoredRateSegment(change, new BigDecimal("0.048000")));
+
+        ComparisonResult result = service.compareScheduled(
+                RepaymentMethod.EQUAL_PRINCIPAL, PRINCIPAL, 12, start, segments, 2,
+                new BigDecimal("100000.00"), start, BigDecimal.ZERO);
+
+        ScheduleRow splitRow = result.shortenTerm().schedule().get(1);
+        // 调息发生在第 2 期（2/1~3/1）：旧利率 9 天、新利率 19 天。
+        BigDecimal expectedInterest = new BigDecimal("2803.89"); // 816,666.67*(3.6%*9 + 4.8%*19)/360
+        assertEquals(expectedInterest, splitRow.interest());
+        assertEquals(2, splitRow.interestBreakdown().size());
+        assertEquals(9, splitRow.interestBreakdown().get(0).days());
+        assertEquals(19, splitRow.interestBreakdown().get(1).days());
+        assertEquals(new BigDecimal("735.00"), splitRow.interestBreakdown().get(0).interest());
+        assertEquals(new BigDecimal("2068.89"), splitRow.interestBreakdown().get(1).interest());
+        assertBreakdownSums(splitRow);
+        assertScheduledScheduleConsistent(result.shortenTerm().schedule(), new BigDecimal("900000.00"));
+        assertScheduledScheduleConsistent(result.reducePayment().schedule(), new BigDecimal("900000.00"));
+    }
+
+    @Test
+    void prepaymentOnRateChangeDate_appliesPrepaymentBeforeNewRate() {
+        LocalDate start = LocalDate.of(2025, 1, 1);
+        LocalDate event = LocalDate.of(2025, 2, 1);
+        List<LoanContract.StoredRateSegment> segments = List.of(
+                new LoanContract.StoredRateSegment(start, new BigDecimal("0.036000")),
+                new LoanContract.StoredRateSegment(event, new BigDecimal("0.048000")));
+
+        ComparisonResult result = service.compareScheduled(
+                RepaymentMethod.EQUAL_PRINCIPAL, PRINCIPAL, 12, start, segments, 2,
+                new BigDecimal("100000.00"), event, BigDecimal.ZERO);
+
+        // 事件顺序：2 月 1 日先冲本金，再按同日 4.8% 计息；首行就是提前还款后的第 2 期。
+        ScheduleRow first = result.shortenTerm().schedule().get(0);
+        assertEquals(2, first.period());
+        assertEquals(event, first.startDate());
+        assertEquals(new BigDecimal("3360.00"), first.interest()); // 900,000 × 4.8% × 28 / 360
+        assertEquals(new BigDecimal("0.048000"), first.interestBreakdown().get(0).annualRate());
+        assertScheduledScheduleConsistent(result.shortenTerm().schedule(), new BigDecimal("900000.00"), 2);
+    }
+
+    @Test
+    void scheduledRateChange_rejectsSameDayDuplicatesAndScheduleGap() {
+        LocalDate start = LocalDate.of(2025, 1, 1);
+        List<LoanContract.StoredRateSegment> duplicates = List.of(
+                new LoanContract.StoredRateSegment(start, new BigDecimal("0.036")),
+                new LoanContract.StoredRateSegment(start, new BigDecimal("0.048")));
+        assertThrows(IllegalArgumentException.class, () -> service.compareScheduled(
+                RepaymentMethod.EQUAL_PRINCIPAL, PRINCIPAL, 12, start, duplicates, 1,
+                PREPAY, start, BigDecimal.ZERO));
+
+        List<LoanContract.StoredRateSegment> gap = List.of(
+                new LoanContract.StoredRateSegment(start.plusDays(1), new BigDecimal("0.036")));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> service.compareScheduled(
+                RepaymentMethod.EQUAL_PRINCIPAL, PRINCIPAL, 12, start, gap, 1,
+                PREPAY, start, BigDecimal.ZERO));
+        assertTrue(e.getMessage().contains("空档"));
+    }
+
     // ---------- 参数校验 ----------
 
     @Test
@@ -186,5 +255,41 @@ class AmortizationServiceTest {
         assertEquals(0, principal.compareTo(totalPrincipal), "各期本金合计应等于贷款本金");
         assertEquals(0, BigDecimal.ZERO.compareTo(rows.get(rows.size() - 1).balance()),
                 "末期后余额应恰好为 0");
+    }
+
+    /** 日期分段计划还需核对：分段利息合计、日期区间和尾期零余额。 */
+    private static void assertScheduledScheduleConsistent(List<ScheduleRow> rows, BigDecimal principal) {
+        assertScheduledScheduleConsistent(rows, principal, 1);
+    }
+
+    private static void assertScheduledScheduleConsistent(List<ScheduleRow> rows, BigDecimal principal,
+                                                          int expectedFirstPeriod) {
+        BigDecimal totalPrincipal = BigDecimal.ZERO;
+        BigDecimal previousBalance = principal;
+        assertEquals(expectedFirstPeriod, rows.get(0).period());
+        for (ScheduleRow row : rows) {
+            assertNotNull(row.startDate());
+            assertNotNull(row.dueDate());
+            assertTrue(row.dueDate().isAfter(row.startDate()));
+            assertEquals(row.principal().add(row.interest()), row.payment());
+            assertEquals(0, previousBalance.subtract(row.principal()).compareTo(row.balance()));
+            assertTrue(row.balance().signum() >= 0);
+            assertBreakdownSums(row);
+            totalPrincipal = totalPrincipal.add(row.principal());
+            previousBalance = row.balance();
+        }
+        assertEquals(0, principal.compareTo(totalPrincipal));
+        assertEquals(0, BigDecimal.ZERO.compareTo(rows.get(rows.size() - 1).balance()));
+    }
+
+    private static void assertBreakdownSums(ScheduleRow row) {
+        BigDecimal sum = row.interestBreakdown().stream()
+                .map(b -> b.interest())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertEquals(row.interest(), sum, "第 " + row.period() + " 期分段利息合计应等于当期利息");
+        for (var part : row.interestBreakdown()) {
+            assertTrue(part.days() > 0);
+            assertTrue(part.interest().signum() >= 0);
+        }
     }
 }

@@ -64,3 +64,25 @@ button {
 button:hover {
   background: #eff6ff;
 }
+
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.actions button {
+  margin: 0;
+  padding: 5px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #1e293b;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.actions button:hover {
+  background: #f1f5f9;
+}

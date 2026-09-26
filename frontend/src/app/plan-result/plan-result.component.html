@@ -25,10 +25,10 @@
       </div>
     </div>
     <p class="explanation">
-      同一笔提前还款：<b>缩短期限</b>保持月供水平不变、提前 {{ result.diff.periodDiff }} 期结清，
+      同一笔提前还款：<b>缩短期限</b>保持调息后基准月供水平不变、提前 {{ result.diff.periodDiff }} 期结清，
       总利息更少（少付 {{ result.diff.interestDiff | number: '1.2-2' }} 元）；
       <b>降低月供</b>保持 {{ result.reducePayment.summary.periods }} 期不变、
-      <ng-container *ngIf="isInstallment">月供降至 {{ result.reducePayment.summary.monthlyPayment! | number: '1.2-2' }} 元</ng-container>
+      <ng-container *ngIf="isInstallment">首阶段月供降至 {{ result.reducePayment.summary.monthlyPayment! | number: '1.2-2' }} 元</ng-container>
       <ng-container *ngIf="!isInstallment">首月月供降至 {{ result.reducePayment.summary.firstPayment | number: '1.2-2' }} 元</ng-container>
       ，还款压力更小但利息更多。不提前还款的基准总利息为 {{ result.baseline.totalInterest | number: '1.2-2' }} 元（{{ result.baseline.periods }} 期）。
     </p>
@@ -37,14 +37,29 @@
   <!-- 两种方案并排 -->
   <div class="plans">
     <article class="plan card" *ngFor="let plan of plans; trackBy: trackPlan">
-      <h3>{{ plan.label }}</h3>
+      <div class="plan-heading">
+        <h3>{{ plan.label }}</h3>
+        <div class="version-badge" *ngIf="plan.rateScheduleVersion">
+          利率表 v{{ plan.rateScheduleVersion }}
+        </div>
+      </div>
+      <p class="schedule-meta" *ngIf="plan.scheduleStartDate">
+        起息日 {{ plan.scheduleStartDate }} · 提前还款日 {{ plan.prepaymentDate }}
+        · 事件顺序：先冲本金，同日再按新利率起息
+      </p>
+      <div class="timeline-mini" *ngIf="plan.rateScheduleSnapshot?.length">
+        <ng-container *ngFor="let s of plan.rateScheduleSnapshot">
+          <span>{{ s.effectiveDate }}：{{ s.annualRate * 100 | number: '1.0-6' }}%</span>
+        </ng-container>
+      </div>
+
       <div class="summary-grid">
         <div>
           <span>期数</span>
           <strong>{{ plan.summary.periods }} 期</strong>
         </div>
         <div *ngIf="isInstallment">
-          <span>月供</span>
+          <span>首阶段月供</span>
           <strong>{{ plan.summary.monthlyPayment! | number: '1.2-2' }} 元</strong>
         </div>
         <ng-container *ngIf="!isInstallment">
@@ -79,21 +94,63 @@
         <table>
           <thead>
             <tr>
-              <th>期次</th>
+              <th>期次 / 日期</th>
               <th>月供（元）</th>
               <th>本金（元）</th>
               <th>利息（元）</th>
+              <th>利率来源</th>
               <th>剩余本金（元）</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of plan.schedule" [class.settled]="row.balance === 0">
-              <td>{{ row.period }}</td>
-              <td>{{ row.payment | number: '1.2-2' }}</td>
-              <td>{{ row.principal | number: '1.2-2' }}</td>
-              <td>{{ row.interest | number: '1.2-2' }}</td>
-              <td>{{ row.balance | number: '1.2-2' }}</td>
-            </tr>
+            <ng-container *ngFor="let row of plan.schedule">
+              <tr [class.settled]="row.balance === 0" [class.split]="row.interestBreakdown.length > 1">
+                <td>
+                  <button type="button" class="expand"
+                          *ngIf="row.interestBreakdown.length > 1"
+                          (click)="toggle(plan, row)">
+                    {{ isOpen(plan, row) ? '−' : '+' }}
+                  </button>
+                  <span class="period-no">{{ row.period }}</span>
+                  <small *ngIf="row.startDate">{{ row.startDate }} → {{ row.dueDate }}</small>
+                </td>
+                <td>{{ row.payment | number: '1.2-2' }}</td>
+                <td>{{ row.principal | number: '1.2-2' }}</td>
+                <td>{{ row.interest | number: '1.2-2' }}</td>
+                <td class="source">{{ sourceText(row) || '—' }}</td>
+                <td>{{ row.balance | number: '1.2-2' }}</td>
+              </tr>
+              <tr class="breakdown-row" *ngIf="isOpen(plan, row)">
+                <td colspan="6">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>适用区间</th>
+                        <th>生效日</th>
+                        <th>年利率</th>
+                        <th>占用天数</th>
+                        <th>分段利息</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let part of row.interestBreakdown">
+                        <td>{{ part.segmentStart }} 至 {{ part.segmentEnd }}</td>
+                        <td>{{ part.effectiveDate }}</td>
+                        <td>{{ part.annualRate * 100 | number: '1.0-6' }}%</td>
+                        <td>{{ part.days }} 天</td>
+                        <td>{{ part.interest | number: '1.2-2' }}</td>
+                      </tr>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="4">分段合计</td>
+                        <td>{{ breakdownTotal(row.interestBreakdown) | number: '1.2-2' }}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </td>
+              </tr>
+            </ng-container>
           </tbody>
           <tfoot>
             <tr>
@@ -101,6 +158,7 @@
               <td>{{ plan.summary.totalPayment | number: '1.2-2' }}</td>
               <td>{{ plan.summary.totalPrincipal | number: '1.2-2' }}</td>
               <td>{{ plan.summary.totalInterest | number: '1.2-2' }}</td>
+              <td>—</td>
               <td>—</td>
             </tr>
           </tfoot>
