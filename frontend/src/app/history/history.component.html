@@ -8,6 +8,7 @@
           <th>时间</th>
           <th>合同</th>
           <th>还款方式</th>
+          <th>利率版本</th>
           <th>提前还款（元）</th>
           <th>手续费（元）</th>
           <th>缩短期限</th>
@@ -21,6 +22,7 @@
           <td>{{ r.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
           <td>{{ r.contractNo ?? '手工录入' }}</td>
           <td>{{ methodLabels[r.method] }}</td>
+          <td>{{ r.rateVersionNo != null ? 'v' + r.rateVersionNo : '快照' }}</td>
           <td>{{ r.prepaymentAmount | number: '1.2-2' }}</td>
           <td>{{ r.fee | number: '1.2-2' }}</td>
           <td>{{ r.shortenPeriods }} 期 / 息 {{ r.shortenTotalInterest | number: '1.0-0' }}</td>

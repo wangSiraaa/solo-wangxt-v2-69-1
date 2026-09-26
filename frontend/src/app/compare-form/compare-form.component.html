@@ -16,9 +16,40 @@
   <ng-container *ngIf="selectedContract as c; else manualParams">
     <div class="contract-info">
       <div><span>还款方式</span><strong>{{ methodLabels[c.method] }}</strong></div>
-      <div><span>年利率</span><strong>{{ c.annualRate * 100 | number: '1.0-3' }}%</strong></div>
+      <div><span>计划起始日</span><strong>{{ c.scheduleStartDate }}</strong></div>
       <div><span>剩余本金</span><strong>{{ c.remainingPrincipal | number: '1.2-2' }} 元</strong></div>
       <div><span>剩余期数</span><strong>{{ c.remainingPeriods }} 期</strong></div>
+    </div>
+
+    <!-- 合同利率时间表（当前版本） -->
+    <div class="schedule-section" *ngIf="contractSchedule as schedule">
+      <div class="schedule-header">
+        <label>利率时间表（当前版本 v{{ schedule.versionNo }}）</label>
+        <button type="button" class="link-btn" *ngIf="!editingSchedule" (click)="startEditSchedule()">
+          编辑利率表
+        </button>
+      </div>
+      <app-rate-schedule-editor
+        #contractEditor
+        [segments]="contractSegments"
+        (segmentsChange)="contractSegments = $event"
+        [startDate]="c.scheduleStartDate"
+        [horizonMonths]="c.remainingPeriods"
+        [readonly]="!editingSchedule"
+      />
+      <div class="schedule-actions" *ngIf="editingSchedule">
+        <button
+          type="button"
+          class="secondary-btn"
+          (click)="saveSchedule()"
+          [disabled]="savingSchedule || !contractEditor.valid"
+        >
+          {{ savingSchedule ? '保存中…' : '保存为新版本' }}
+        </button>
+        <button type="button" class="link-btn" (click)="cancelEditSchedule()">取消</button>
+      </div>
+      <small class="ok-hint" *ngIf="scheduleMessage">{{ scheduleMessage }}</small>
+      <small class="hint" *ngIf="scheduleError">{{ scheduleError }}</small>
     </div>
   </ng-container>
 
@@ -32,8 +63,9 @@
         </select>
       </div>
       <div class="field">
-        <label for="rate">年利率（%）</label>
-        <input id="rate" type="number" step="0.001" formControlName="annualRatePercent" />
+        <label for="startDate">计划起始日（第 1 期计息起始日）</label>
+        <input id="startDate" type="date" formControlName="scheduleStartDate" />
+        <small class="hint">提前还款于当日计息前冲减本金</small>
       </div>
       <div class="field">
         <label for="principal">剩余本金（元）</label>
@@ -43,6 +75,17 @@
         <label for="periods">剩余期数（月）</label>
         <input id="periods" type="number" step="1" formControlName="remainingPeriods" />
       </div>
+    </div>
+
+    <div class="schedule-section">
+      <label>利率时间表（按生效日分段；跨调息日的期按实际占用天数计息）</label>
+      <app-rate-schedule-editor
+        #manualEditor
+        [segments]="manualSegments"
+        (segmentsChange)="manualSegments = $event"
+        [startDate]="form.controls.scheduleStartDate.value"
+        [horizonMonths]="form.controls.remainingPeriods.value"
+      />
     </div>
   </ng-template>
 
@@ -60,7 +103,7 @@
     </div>
   </div>
 
-  <button type="submit" [disabled]="loading || form.invalid">
+  <button type="submit" [disabled]="loading || form.invalid || scheduleInvalid">
     {{ loading ? '计算中…' : '对比两种方案' }}
   </button>
 </form>

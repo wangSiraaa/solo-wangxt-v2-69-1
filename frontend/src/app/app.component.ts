@@ -22,7 +22,11 @@ export class AppComponent {
   comparison: ComparisonResult | null = null;
   method: RepaymentMethod = 'EQUAL_INSTALLMENT';
   recordId: number | null = null;
+  /** 当前展示结果计算时采用的利率版本与计划起始日。 */
+  rateVersionNo: number | null = null;
+  scheduleStartDate: string | null = null;
   loading = false;
+  deriving = false;
   error = '';
   /** 每完成一次计算递增，通知历史记录刷新。 */
   historyRefresh = 0;
@@ -32,9 +36,7 @@ export class AppComponent {
     this.error = '';
     this.api.compare(req).subscribe({
       next: (resp) => {
-        this.comparison = resp.comparison;
-        this.method = resp.method;
-        this.recordId = resp.recordId;
+        this.applyResponse(resp.recordId, resp.method, resp.comparison, resp.rateVersionNo, resp.scheduleStartDate);
         this.loading = false;
         this.historyRefresh++;
       },
@@ -50,9 +52,7 @@ export class AppComponent {
     this.error = '';
     this.api.getRecord(id).subscribe({
       next: (resp) => {
-        this.comparison = resp.comparison;
-        this.method = resp.method;
-        this.recordId = resp.recordId;
+        this.applyResponse(resp.recordId, resp.method, resp.comparison, resp.rateVersionNo, resp.scheduleStartDate);
         this.loading = false;
       },
       error: () => {
@@ -60,5 +60,34 @@ export class AppComponent {
         this.loading = false;
       },
     });
+  }
+
+  /** 以当前展示的记录为基础，按合同当前利率版本派生新计算。 */
+  onDerive(): void {
+    if (this.recordId == null) {
+      return;
+    }
+    this.deriving = true;
+    this.error = '';
+    this.api.derive(this.recordId).subscribe({
+      next: (resp) => {
+        this.applyResponse(resp.recordId, resp.method, resp.comparison, resp.rateVersionNo, resp.scheduleStartDate);
+        this.deriving = false;
+        this.historyRefresh++;
+      },
+      error: (err) => {
+        this.error = err?.error?.message ?? '派生计算失败';
+        this.deriving = false;
+      },
+    });
+  }
+
+  private applyResponse(recordId: number, method: RepaymentMethod, comparison: ComparisonResult,
+                        rateVersionNo: number | null, scheduleStartDate: string): void {
+    this.recordId = recordId;
+    this.method = method;
+    this.comparison = comparison;
+    this.rateVersionNo = rateVersionNo;
+    this.scheduleStartDate = scheduleStartDate;
   }
 }

@@ -1,0 +1,66 @@
+<div class="schedule-editor">
+  <!-- 时间轴 -->
+  <div class="timeline" *ngIf="timelineBlocks.length > 0">
+    <div class="timeline-track">
+      <div
+        *ngFor="let block of timelineBlocks"
+        class="timeline-block"
+        [style.left.%]="block.left"
+        [style.width.%]="block.width"
+        [style.background]="block.color"
+        [title]="block.title"
+      >
+        <span *ngIf="block.width > 8">{{ block.label }}</span>
+      </div>
+    </div>
+    <div class="timeline-axis">
+      <span>{{ axisStartLabel }}</span>
+      <span>{{ axisEndLabel }}</span>
+    </div>
+  </div>
+
+  <!-- 利率段表格 -->
+  <table class="segments">
+    <thead>
+      <tr>
+        <th>生效日（含）</th>
+        <th>年利率（%）</th>
+        <th *ngIf="!readonly"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows; let i = index">
+        <td>
+          <input
+            type="date"
+            [(ngModel)]="row.effectiveDate"
+            (ngModelChange)="onRowChange()"
+            [disabled]="readonly"
+          />
+        </td>
+        <td>
+          <input
+            type="number"
+            step="0.0001"
+            min="0"
+            max="36"
+            [(ngModel)]="row.ratePercent"
+            (ngModelChange)="onRowChange()"
+            [disabled]="readonly"
+          />
+        </td>
+        <td *ngIf="!readonly">
+          <button type="button" class="link-btn" (click)="removeRow(i)" [disabled]="rows.length <= 1">
+            删除
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button type="button" class="link-btn" *ngIf="!readonly" (click)="addRow()">＋ 添加利率段</button>
+
+  <ul class="editor-errors" *ngIf="errors.length > 0">
+    <li *ngFor="let error of errors">{{ error }}</li>
+  </ul>
+</div>

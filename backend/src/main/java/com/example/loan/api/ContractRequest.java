@@ -9,9 +9,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 新建模拟合同请求。年利率为小数形式（0.049 表示 4.9%）。
+ * rateSchedule 缺省时以 annualRate 构成自计划起始日起的单一利率段（版本 1）。
  */
 public record ContractRequest(
         @NotBlank(message = "合同编号不能为空")
@@ -34,5 +37,9 @@ public record ContractRequest(
 
         @Min(value = 1, message = "剩余期数至少为 1")
         @Max(value = 600, message = "剩余期数不能超过 600")
-        int remainingPeriods) {
+        int remainingPeriods,
+
+        LocalDate scheduleStartDate,
+
+        List<RateSegmentInput> rateSchedule) {
 }

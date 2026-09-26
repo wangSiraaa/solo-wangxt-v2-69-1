@@ -44,7 +44,7 @@
           <strong>{{ plan.summary.periods }} 期</strong>
         </div>
         <div *ngIf="isInstallment">
-          <span>月供</span>
+          <span>{{ paymentVaries(plan) ? '首期月供' : '月供' }}</span>
           <strong>{{ plan.summary.monthlyPayment! | number: '1.2-2' }} 元</strong>
         </div>
         <ng-container *ngIf="!isInstallment">
@@ -80,27 +80,36 @@
           <thead>
             <tr>
               <th>期次</th>
+              <th>计息区间</th>
               <th>月供（元）</th>
               <th>本金（元）</th>
               <th>利息（元）</th>
+              <th>利率来源</th>
               <th>剩余本金（元）</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let row of plan.schedule" [class.settled]="row.balance === 0">
               <td>{{ row.period }}</td>
+              <td class="date-cell" *ngIf="row.periodStart">{{ row.periodStart }} ~ {{ row.periodEnd }}</td>
+              <td class="date-cell" *ngIf="!row.periodStart">—</td>
               <td>{{ row.payment | number: '1.2-2' }}</td>
               <td>{{ row.principal | number: '1.2-2' }}</td>
               <td>{{ row.interest | number: '1.2-2' }}</td>
+              <td class="rate-cell" [class.split]="isSplit(row)" [title]="rateSourceTitle(row)">
+                {{ rateSource(row) }}
+              </td>
               <td>{{ row.balance | number: '1.2-2' }}</td>
             </tr>
           </tbody>
           <tfoot>
             <tr>
               <td>合计</td>
+              <td>—</td>
               <td>{{ plan.summary.totalPayment | number: '1.2-2' }}</td>
               <td>{{ plan.summary.totalPrincipal | number: '1.2-2' }}</td>
               <td>{{ plan.summary.totalInterest | number: '1.2-2' }}</td>
+              <td>—</td>
               <td>—</td>
             </tr>
           </tfoot>

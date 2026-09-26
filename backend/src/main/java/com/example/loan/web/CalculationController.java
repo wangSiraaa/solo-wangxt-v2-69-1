@@ -2,6 +2,7 @@ package com.example.loan.web;
 
 import com.example.loan.api.CalculationResponse;
 import com.example.loan.api.CompareRequest;
+import com.example.loan.api.DeriveRequest;
 import com.example.loan.api.RecordSummaryView;
 import com.example.loan.service.CalculationService;
 import jakarta.validation.Valid;
@@ -26,6 +27,13 @@ public class CalculationController {
     @PostMapping("/compare")
     public CalculationResponse compare(@Valid @RequestBody CompareRequest req) {
         return calculationService.compareAndSave(req);
+    }
+
+    /** 由历史记录派生新计算（默认采用合同当前利率版本；可在请求体中指定利率时间表）。 */
+    @PostMapping("/{id}/derive")
+    public CalculationResponse derive(@PathVariable long id,
+                                      @RequestBody(required = false) DeriveRequest req) {
+        return calculationService.deriveAndSave(id, req);
     }
 
     /** 历史计算记录（列表视图）。 */

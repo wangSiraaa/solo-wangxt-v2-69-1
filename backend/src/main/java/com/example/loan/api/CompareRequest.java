@@ -8,11 +8,15 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 提前还款对比计算请求。
- * 若指定 contractId，则合同参数（还款方式、利率、剩余本金、剩余期数）取自模拟合同，
- * 否则使用请求中手工录入的参数。年利率为小数形式（0.049 表示 4.9%）。
+ * 若指定 contractId，则合同参数（还款方式、计划起始日、利率时间表、剩余本金、剩余期数）
+ * 取自模拟合同及其当前利率版本；否则使用请求中手工录入的参数。
+ * 手工录入时：rateSchedule 为分段利率时间表；缺省时以 annualRate 构成单一利率段。
+ * 年利率为小数形式（0.049 表示 4.9%）。
  */
 public record CompareRequest(
         Long contractId,
@@ -22,6 +26,10 @@ public record CompareRequest(
         @DecimalMin(value = "0", message = "年利率不能为负")
         @DecimalMax(value = "0.36", message = "年利率不能超过 36%")
         BigDecimal annualRate,
+
+        LocalDate scheduleStartDate,
+
+        List<RateSegmentInput> rateSchedule,
 
         @DecimalMin(value = "0.01", message = "剩余本金必须大于 0")
         BigDecimal remainingPrincipal,

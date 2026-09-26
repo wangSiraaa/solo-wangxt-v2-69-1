@@ -163,3 +163,18 @@ tfoot td {
   font-weight: 700;
   border-top: 1px solid #c7d2fe;
 }
+
+.date-cell {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.rate-cell {
+  font-size: 12px;
+  color: #334155;
+}
+
+.rate-cell.split {
+  color: #b45309;
+  font-weight: 600;
+}

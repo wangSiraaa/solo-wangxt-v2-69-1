@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * 模拟贷款合同。仅用于演示，不对应任何真实放贷数据。
@@ -28,9 +29,13 @@ public class LoanContract {
     @Column(nullable = false, length = 32)
     private RepaymentMethod method;
 
-    /** 年利率，小数形式，例如 0.049 表示 4.9%。 */
+    /** 初始年利率（创建时利率时间表首段的利率），小数形式，例如 0.049 表示 4.9%。 */
     @Column(nullable = false, precision = 9, scale = 6)
     private BigDecimal annualRate;
+
+    /** 还款计划起始日（第 1 期计息起始日；提前还款于当日计息前冲减本金）。 */
+    @Column(nullable = false)
+    private LocalDate scheduleStartDate;
 
     /** 当前剩余本金。 */
     @Column(nullable = false, precision = 19, scale = 2)
@@ -47,13 +52,15 @@ public class LoanContract {
     }
 
     public LoanContract(String contractNo, String borrowerName, RepaymentMethod method,
-                        BigDecimal annualRate, BigDecimal remainingPrincipal, int remainingPeriods) {
+                        BigDecimal annualRate, BigDecimal remainingPrincipal, int remainingPeriods,
+                        LocalDate scheduleStartDate) {
         this.contractNo = contractNo;
         this.borrowerName = borrowerName;
         this.method = method;
         this.annualRate = annualRate;
         this.remainingPrincipal = remainingPrincipal;
         this.remainingPeriods = remainingPeriods;
+        this.scheduleStartDate = scheduleStartDate;
     }
 
     public Long getId() {
@@ -82,6 +89,10 @@ public class LoanContract {
 
     public int getRemainingPeriods() {
         return remainingPeriods;
+    }
+
+    public LocalDate getScheduleStartDate() {
+        return scheduleStartDate;
     }
 
     public Instant getCreatedAt() {
